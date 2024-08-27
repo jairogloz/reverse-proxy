@@ -56,6 +56,17 @@ Run the reverse proxy:
 go run main.go
 ```
 
+Now you can send a test request to the reverse proxy server:
+```bash
+curl -H "Country: mx" http://localhost:8080/resources
+```
+
+If you change the Country header to "ar", the request will be routed to the second service.
+
+```bash
+curl -H "Country: ar" http://localhost:8080/resources
+```
+
 ## How It Works
 The reverse proxy server re-routes incoming requests to the appropriate service based on the Country header in the request. For example:
 
