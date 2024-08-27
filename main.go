@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 )
 
 // reverseProxy sets up a reverse proxy for a given target URL
@@ -25,12 +26,14 @@ func reverseProxy(target string) http.HandlerFunc {
 // routeHandler handles routing based on URL path prefix
 func routeHandler(w http.ResponseWriter, r *http.Request) {
 	country := r.Header.Get("Country")
+	country = strings.ToLower(country)
 	switch country {
 	case "mx":
 		reverseProxy("http://localhost:8081").ServeHTTP(w, r)
 	case "ar":
 		reverseProxy("http://localhost:8082").ServeHTTP(w, r)
 	default:
+		// You could also route to a default service here
 		http.Error(w, "Not Found", http.StatusNotFound)
 	}
 }
