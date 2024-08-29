@@ -1,11 +1,11 @@
 ![golang](https://camo.githubusercontent.com/29f331ff0b9cd5621d1233c541c575511c7ebb7cd6c09cb18c175c8bc729d14b/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f676f2d2532333030414444382e7376673f7374796c653d666f722d7468652d6261646765266c6f676f3d676f266c6f676f436f6c6f723d7768697465)
-# Reverse Proxy 
+# 🚌 Reverse Proxy 
 This documentation outlines the implementation of a basic reverse proxy in Go that utilizes a JSON configuration file to dynamically set up routing based on HTTP headers.
 
-# Overview
+# 💻 Overview
 The reverse proxy routes incoming HTTP requests to different backend services based on the value of a specified HTTP header. This allows for flexible and dynamic routing without hardcoding routes in the proxy itself.
 
-# JSON Configuration
+# 🔧 JSON Configuration
 The proxy's behavior is controlled by a JSON configuration file. This file defines the port on which the proxy listens and a list of endpoints with routing rules.
 
 ## Sample Configuration (config.json):
@@ -36,7 +36,7 @@ The proxy's behavior is controlled by a JSON configuration file. This file defin
 - header_identifier: The HTTP header used to determine the backend URL.
 - backend_urls: A map where the key is the expected value of the header_identifier, and the value is the backend URL to which the request should be proxied.
 
-# Implementation
+# ✈ Implementation
 The Go application reads the configuration file, sets up the routes, and proxies requests based on the provided configuration.
 
 ## Key Components:
@@ -68,7 +68,7 @@ This request will be proxied to http://localhost:8001.
 ## Error Handling
 - If the header value does not match any key in backend_urls, the proxy will return a 404 Not Found response.
 
-# Running the Project Locally
+# 🏢 Running the Project Locally
 To run the project locally, you'll set up four simple servers using the simple_host application, each listening on a different port. Then, you'll start the reverse proxy that routes requests to these servers based on HTTP headers. Below are the steps to set up and run everything locally.
 
 ## Step 1: Run the Simple Servers
