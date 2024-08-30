@@ -1,3 +1,3 @@
-module github.com/jairogloz/api-gateway
+module github.com/AndresKenji/reverse-proxy
 
-go 1.23.0
+go 1.22.0
