@@ -20,6 +20,7 @@ type ConfigFile struct {
 	Endpoints []Config `json:"endpoints"`
 }
 
+
 func (c *Config) GenerateHandler() http.HandlerFunc {
 	log.Println("Creating Handler for ", c.Prefix)
 
@@ -28,7 +29,7 @@ func (c *Config) GenerateHandler() http.HandlerFunc {
 		log.Println("Hit ", c.Prefix, hi)
 		url, exist := c.BackendUrls[hi]
 		if exist {
-			handlers.ReverseProxy(url).ServeHTTP(w, r)
+			handlers.ReverseProxy(url, c.Prefix).ServeHTTP(w, r)
 		} else {
 			http.Error(w, "Not Found", http.StatusNotFound)
 		}

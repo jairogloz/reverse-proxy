@@ -6,12 +6,15 @@ import (
 	"net/url"
 )
 
-//  ReverseProxy function creates an HTTP handler that acts as a reverse proxy to forward incoming requests to a specified target server.
-func ReverseProxy(target string) http.HandlerFunc {
+
+func ReverseProxy(target string, prefix string) http.HandlerFunc {
 	url, _ := url.Parse(target)
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Preserve the rest of the URL path after the prefix
+		r.URL.Path = r.URL.Path[len(prefix):]
+
 		r.URL.Host = url.Host
 		r.URL.Scheme = url.Scheme
 		r.Header.Set("X-Forwarded-Host", r.Host)
