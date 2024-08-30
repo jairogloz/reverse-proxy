@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/AndresKenji/reverse-proxy/internal/config"
+	"github.com/AndresKenji/reverse-proxy/internal/middleware"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 
 	for _, cfg := range cfgFile.Endpoints {
 		log.Println(cfg)
-		mux.HandleFunc(cfg.Prefix, cfg.GenerateHandler().ServeHTTP)
+		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateHandler().ServeHTTP) )
 	}
 
 	server := http.Server{
