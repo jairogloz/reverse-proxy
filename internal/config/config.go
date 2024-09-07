@@ -20,7 +20,6 @@ type ConfigFile struct {
 	Endpoints []Config `json:"endpoints"`
 }
 
-
 func (c *Config) GenerateHandler() http.HandlerFunc {
 	log.Println("Creating Handler for ", c.Prefix)
 

@@ -1,38 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/AndresKenji/reverse-proxy/internal/config"
-	"github.com/AndresKenji/reverse-proxy/internal/middleware"
+	"github.com/AndresKenji/reverse-proxy/internal/server"
 )
 
 func main() {
 
 	cfgFile, err := config.NewConfig("config.json")
-	if err != nil{
+	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world!"))
-	})
+	srv := server.NewServer()
+	srv.SetServerMux(cfgFile)
 
-	for _, cfg := range cfgFile.Endpoints {
-		log.Println(cfg)
-		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateHandler().ServeHTTP) )
+	log.Println("API GateWay running on port:", srv.Port)
+	err = http.ListenAndServe(srv.Port, srv.Mux)
+	if err != nil {
+		log.Panic(err)
 	}
-
-	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", cfgFile.Port),
-		Handler: mux,
-	}
-
-	log.Println("API GateWay running on port:", cfgFile.Port)
-
-	log.Fatal(server.ListenAndServe())
 
 }
