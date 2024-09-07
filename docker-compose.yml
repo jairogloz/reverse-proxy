@@ -1,13 +1,33 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  mongo:
-    image: 'mongo:4.2.16-bionic'
+  mongodb:
+    image: mongo:6.0.8
+    container_name: mongodb
+    hostname: mongodb
+    restart: always
     ports:
       - "27017:27017"
+    env_file: 
+      - .env
     environment:
-      MONGO_INITDB_DATABASE: logs
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: ${MONGO_INIT_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PWD}
     volumes:
       - ./db-data/mongo/:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PWD}
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: 'mongodb'
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PWD}
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongodb

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/AndresKenji/reverse-proxy/internal/config"
+	"github.com/AndresKenji/reverse-proxy/internal/database"
 	"github.com/AndresKenji/reverse-proxy/internal/middleware"
 )
 
@@ -15,6 +16,7 @@ type Server struct {
 	Port    string
 	Mux     *http.ServeMux
 	Context context.Context
+	Database *database.Database
 }
 
 func NewServer(ctx context.Context) *Server {
@@ -27,6 +29,7 @@ func NewServer(ctx context.Context) *Server {
 	} else {
 		server.Port = fmt.Sprintf(":%s", port)
 	}
+	server.Database = database.NewDatabase()
 
 	return server
 }

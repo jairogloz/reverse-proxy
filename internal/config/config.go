@@ -2,24 +2,24 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/AndresKenji/reverse-proxy/internal/handlers"
 )
 
 type Config struct {
-	Prefix           string            `json:"prefix"`
-	HeaderIdentifier string            `json:"header_identifier"`
-	BackendUrls      map[string]string `json:"backend_urls"`
-	Secure           bool              `json:"secure"`
+	Prefix           string            `json:"prefix" bson:"prefix"`
+	HeaderIdentifier string            `json:"header_identifier" bson:"header_identifier"`
+	BackendUrls      map[string]string `json:"backend_urls" bson:"backend_urls"`
+	Secure           bool              `json:"secure" bson:"secure"`
 }
 
 type ConfigFile struct {
-	Endpoints []Config `json:"endpoints"`
+	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	Endpoints []Config `json:"endpoints" bson:"endpoints"`
 }
 
 // GenerateHandler Create a reverproxy HandleFunc for each Endpoint on the ConfigFile
@@ -75,70 +75,3 @@ func DefaultConfig() *ConfigFile {
 	}
 }
 
-// LoadConfigFromElasticsearch retrieves a configuration file from an Elasticsearch endpoint
-func LoadConfigFromElasticsearch() (*ConfigFile, error) {
-	elasticURL := os.Getenv("elastic_url")
-	indexName := "gw_config"
-	var cfgFile ConfigFile
-
-	// Step 1: Search for the latest document
-	searchURL := fmt.Sprintf("%s/%s/_search?sort=@timestamp:desc&size=1", elasticURL, indexName)
-	resp, err := http.Get(searchURL)
-	if err != nil {
-		log.Println("Error making request to Elasticsearch:", err.Error())
-		return &cfgFile, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("Error: received non-200 response code %d", resp.StatusCode)
-		return &cfgFile, fmt.Errorf("received non-200 response code %d", resp.StatusCode)
-	}
-
-	// Read and decode the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error reading response from Elasticsearch:", err.Error())
-		return &cfgFile, err
-	}
-
-	var searchResult map[string]interface{}
-	if err := json.Unmarshal(body, &searchResult); err != nil {
-		log.Println("Error unmarshalling search result JSON:", err.Error())
-		return &cfgFile, err
-	}
-
-	// Extract the latest document
-	hits, ok := searchResult["hits"].(map[string]interface{})
-	if !ok {
-		log.Println("Invalid response format: missing 'hits' field")
-		return &cfgFile, fmt.Errorf("invalid response format: missing 'hits' field")
-	}
-
-	hitArray, ok := hits["hits"].([]interface{})
-	if !ok || len(hitArray) == 0 {
-		log.Println("No documents found in the search results")
-		return &cfgFile, fmt.Errorf("no documents found")
-	}
-
-	latestDoc := hitArray[0].(map[string]interface{})
-	source, ok := latestDoc["_source"].(map[string]interface{})
-	if !ok {
-		log.Println("Invalid document format: missing '_source' field")
-		return &cfgFile, fmt.Errorf("invalid document format: missing '_source' field")
-	}
-
-	// Convert the source document to JSON and unmarshal into ConfigFile
-	sourceData, err := json.Marshal(source)
-	if err != nil {
-		log.Println("Error marshalling source document to JSON:", err.Error())
-		return &cfgFile, err
-	}
-
-	if err := json.Unmarshal(sourceData, &cfgFile); err != nil {
-		log.Println("Error unmarshalling source document JSON:", err.Error())
-		return &cfgFile, err
-	}
-
-	return &cfgFile, nil
-}

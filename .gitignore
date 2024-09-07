@@ -21,7 +21,5 @@
 go.work
 go.work.sum
 
-# env file
-.env
-
 .idea
+/db-data
