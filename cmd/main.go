@@ -1,27 +1,67 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net/http"
+	"time"
 
 	"github.com/AndresKenji/reverse-proxy/internal/config"
 	"github.com/AndresKenji/reverse-proxy/internal/server"
 )
 
-func main() {
+var restartServer bool
 
+func main() {
+	// Cargar la configuración
 	cfgFile, err := config.NewConfig("config.json")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	srv := server.NewServer()
-	srv.SetServerMux(cfgFile)
+	// Crear un ciclo infinito para verificar la condición cada 2 minutos
+	for {
+		// Crear un contexto con cancelación manual
+		ctx, cancel := context.WithCancel(context.Background())
 
-	log.Println("API GateWay running on port:", srv.Port)
-	err = http.ListenAndServe(srv.Port, srv.Mux)
-	if err != nil {
-		log.Panic(err)
+		// Crear el servidor
+		srv := server.NewServer(ctx)
+
+		// Configurar las rutas del servidor
+		srv.SetServerMux(cfgFile)
+
+		// Iniciar el servidor en una goroutine
+		go func() {
+			log.Println("API GateWay running on port:", srv.Port)
+			if err := srv.StartServer(); err != nil {
+				log.Panic(err)
+			}
+		}()
+
+		// Monitorear la condición cada 10 segundos
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		checkForRestart := make(chan bool)
+
+		// Iniciar una goroutine que monitorea si la variable `restartServer` se vuelve true
+		go func() {
+			for range ticker.C {
+				restartServer = true
+				if restartServer {
+					checkForRestart <- true
+					restartServer = false // Reiniciar la variable después de la verificación
+				}
+			}
+		}()
+
+		// Esperar a que se envíe `true` para reiniciar el servidor o cancelar el contexto
+		select {
+		case <-checkForRestart:
+			log.Println("Restarting the server...")
+			cancel() // Cancelar el contexto actual para apagar el servidor
+		case <-ctx.Done():
+			log.Println("Context canceled, shutting down the server...")
+			return // Salir si el contexto fue cancelado por otra razón
+		}
 	}
-
 }

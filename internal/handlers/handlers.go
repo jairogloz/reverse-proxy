@@ -10,12 +10,14 @@ import (
 	"github.com/AndresKenji/reverse-proxy/internal/util"
 )
 
-//  ReverseProxy function creates an HTTP handler that acts as a reverse proxy to forward incoming requests to a specified target server.
-func ReverseProxy(target string, prefix string) http.HandlerFunc {
+// ReverseProxy function creates an HTTP handler that acts as a reverse proxy to forward incoming requests to a specified target server.
+func ReverseProxy(target string, prefix string, secure bool) http.HandlerFunc {
 	url, _ := url.Parse(target)
 	proxy := httputil.NewSingleHostReverseProxy(url)
-	proxy.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Desactivar la verificación del certificado TLS
+	if !secure {
+		proxy.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Desactivar la verificación del certificado TLS
+		}
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

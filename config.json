@@ -1,15 +1,16 @@
 {
-    "port":"8000",
     "endpoints":[
         {
             "prefix":"/apiv1/",
             "header_identifier":"country",
-            "backend_urls":{"col":"http://localhost:8001","mex":"http://localhost:8002"}
+            "backend_urls":{"col":"http://localhost:8001","mex":"http://localhost:8002"},
+            "secure" : false
         },
         {
             "prefix":"/apiv2/",
             "header_identifier":"color",
-            "backend_urls":{"blue":"http://localhost:8003","green":"http://localhost:8004"}
+            "backend_urls":{"blue":"http://localhost:8003","green":"http://localhost:8004"},
+            "secure" : false
         }
     ]
 }
