@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"crypto/tls"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
 
-	"github.com/AndresKenji/reverse-proxy/internal/util"
+	"github.com/AndresKenji/reverse-proxy/internal/models"
 )
 
 // ReverseProxy function creates an HTTP handler that acts as a reverse proxy to forward incoming requests to a specified target server.
@@ -31,7 +32,7 @@ func ReverseProxy(target string, prefix string, secure bool) http.HandlerFunc {
 
 		// Registrar la solicitud proxy
 		start := time.Now()
-		logEntry := util.LogEntry{
+		logEntry := models.LogEntry{
 			Timestamp:  time.Now().UTC(),
 			RemoteAddr: r.RemoteAddr,
 			Method:     r.Method,
@@ -40,8 +41,7 @@ func ReverseProxy(target string, prefix string, secure bool) http.HandlerFunc {
 			TargetURL:  target,
 			Duration:   time.Since(start).String(),
 		}
-		// Enviar el log a Elasticsearch
-		go util.SendLogToElasticsearch(logEntry, "api_gateway")
+		log.Println(logEntry)
 
 		proxy.ServeHTTP(w, r)
 	}

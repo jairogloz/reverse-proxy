@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +9,9 @@ import (
 	"github.com/AndresKenji/reverse-proxy/internal/config"
 	"github.com/AndresKenji/reverse-proxy/internal/database"
 	"github.com/AndresKenji/reverse-proxy/internal/middleware"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Server struct {
@@ -27,7 +29,7 @@ func NewServer(ctx context.Context) *Server {
 		log.Println("There is no environment variable for server port, server will use port 8080 ")
 		server.Port = "8080"
 	} else {
-		server.Port = fmt.Sprintf(":%s", port)
+		server.Port = port
 	}
 	server.Database = database.NewDatabase()
 
@@ -71,5 +73,48 @@ func (s *Server) StartServer() error {
 	}
 
 	log.Println("Server stopped gracefully.")
+	return nil
+}
+
+func (s *Server) SaveConfig(configFile *config.ConfigFile) error {
+	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+
+	_, err := collection.InsertOne(context.TODO(), configFile)
+	if err != nil {
+		log.Println("Error saving config:",err)
+	}
+
+	log.Println("Config saved successfully")
+	return nil
+}
+
+// GetLatestConfig fetches the latest configuration from MongoDB
+func (s *Server) GetLatestConfig() (*config.ConfigFile, error) {
+	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+
+	// Find the latest document based on the created_at field
+	var latestConfig config.ConfigFile
+	filter := bson.D{} // You can modify this filter if needed
+	options := options.FindOne().SetSort(bson.D{{Key: "created_at", Value: -1}})
+	err := collection.FindOne(context.TODO(), filter, options).Decode(&latestConfig)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil // No documents found, return nil
+		}
+		return nil, err
+	}
+
+	return &latestConfig, nil
+}
+
+func (s *Server) UpdateConfig(filter bson.M, update bson.M) error {
+	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+
+	_, err := collection.UpdateOne(context.TODO(), filter, bson.M{"$set":update})
+	if err != nil {
+		log.Println("Error updating config:",err)
+	}
+
+	log.Println("Config updated successfully!")
 	return nil
 }

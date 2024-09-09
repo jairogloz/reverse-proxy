@@ -61,6 +61,7 @@ func NewConfig(filePath string) (*ConfigFile, error) {
 // DefaultConfig returns a default ConfigFile object
 func DefaultConfig() *ConfigFile {
 	return &ConfigFile{
+		CreatedAt: time.Now(),
 		Endpoints: []Config{
 			{
 				Prefix:           "/default/",

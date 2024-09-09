@@ -5,26 +5,24 @@ import (
 	"log"
 	"time"
 
-	"github.com/AndresKenji/reverse-proxy/internal/config"
 	"github.com/AndresKenji/reverse-proxy/internal/server"
 )
 
 var restartServer bool
 
 func main() {
-	// Cargar la configuración
-	cfgFile, err := config.NewConfig("config.json")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	// Crear un ciclo infinito para verificar la condición cada 2 minutos
+	
 	for {
 		// Crear un contexto con cancelación manual
 		ctx, cancel := context.WithCancel(context.Background())
 
 		// Crear el servidor
 		srv := server.NewServer(ctx)
+
+		cfgFile, err := srv.GetLatestConfig()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 
 		// Configurar las rutas del servidor
 		srv.SetServerMux(cfgFile)

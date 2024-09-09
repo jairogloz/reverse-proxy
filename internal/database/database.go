@@ -10,8 +10,8 @@ import (
 )
 
 type Database struct {
-	URL string
-	Port string
+	URL   string
+	Port  string
 	Mongo *mongo.Client
 }
 
@@ -21,9 +21,14 @@ func NewDatabase() *Database {
 	db := &Database{}
 	db.Port = port
 	db.URL = url
+
+	// Mostrar URL y puerto para verificar
+	log.Println("Mongo URL:", db.URL)
+	log.Println("Mongo Port:", db.Port)
+
 	err := db.StartMongo()
 	if err != nil {
-		log.Panic("Error setting mongo db")
+		log.Fatal("Error setting mongo db:", err)
 	}
 	return db
 }
@@ -31,28 +36,31 @@ func NewDatabase() *Database {
 func (d *Database) StartMongo() error {
 	usr := os.Getenv("mongo_user")
 	pwd := os.Getenv("mongo_pwd")
-	// crear opciones de conexión
+
+	// Crear opciones de conexión
 	clientOptions := options.Client().ApplyURI(d.URL)
 	clientOptions.SetAuth(options.Credential{
 		Username: usr,
 		Password: pwd,
 	})
 
-	// conexión
-	c, err := mongo.Connect(context.TODO(), clientOptions)
+	// Conectar
+	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Println("Connection Error:", err)
 		return err
 	}
 
-	err = c.Ping(context.Background(), nil)
+	// Verificar conexión
+	err = client.Ping(context.TODO(), nil)
 	if err != nil {
-		log.Println("Test Connection failed wit error:",err.Error())
+		log.Println("Test Connection failed with error:", err)
 		return err
 	}
 
-	log.Println("Connected to mongo!")
-	d.Mongo = c
+	log.Println("Connected to MongoDB!")
+	d.Mongo = client
 	return nil	
 }
+
 
