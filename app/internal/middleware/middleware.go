@@ -14,9 +14,8 @@ type Middleware func(next http.Handler) http.HandlerFunc
 func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		log.Printf("Started %s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
-		log.Printf("Completed %s in %v", r.URL.Path, time.Since(start))
+		log.Printf("%s - %s %s %s %v", r.Method, r.RemoteAddr, r.URL.Path, r.Proto, time.Since(start))
 	}
 }
 

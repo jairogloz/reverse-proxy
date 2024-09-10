@@ -8,23 +8,15 @@ import (
 	"github.com/AndresKenji/reverse-proxy/internal/server"
 )
 
-var restartServer bool
-
 func main() {
-	
+
 	for {
-		// Crear un contexto con cancelación manual
 		ctx, cancel := context.WithCancel(context.Background())
-
-		// Crear el servidor
 		srv := server.NewServer(ctx)
-
 		cfgFile, err := srv.GetLatestConfig()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-
-		// Configurar las rutas del servidor
 		srv.SetServerMux(cfgFile)
 
 		// Iniciar el servidor en una goroutine
@@ -34,9 +26,8 @@ func main() {
 				log.Panic(err)
 			}
 		}()
-
-		// Monitorear la condición cada 10 segundos
-		ticker := time.NewTicker(10 * time.Second)
+		// Timer para recarga de configuración
+		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
 
 		checkForRestart := make(chan bool)
@@ -44,10 +35,14 @@ func main() {
 		// Iniciar una goroutine que monitorea si la variable `restartServer` se vuelve true
 		go func() {
 			for range ticker.C {
-				restartServer = true
-				if restartServer {
+				log.Println("Checking for configurations updates ...")
+				latestCfg, err := srv.GetLatestConfig()
+				if err != nil {
+					log.Fatal(err.Error())
+				}
+				if latestCfg.CreatedAt.After(cfgFile.CreatedAt) {
+					log.Println("Found new config")
 					checkForRestart <- true
-					restartServer = false // Reiniciar la variable después de la verificación
 				}
 			}
 		}()

@@ -15,9 +15,9 @@ import (
 )
 
 type Server struct {
-	Port    string
-	Mux     *http.ServeMux
-	Context context.Context
+	Port     string
+	Mux      *http.ServeMux
+	Context  context.Context
 	Database *database.Database
 }
 
@@ -26,8 +26,8 @@ func NewServer(ctx context.Context) *Server {
 	server.Context = ctx
 	port := os.Getenv("port")
 	if port == "" {
-		log.Println("There is no environment variable for server port, server will use port 8080 ")
-		server.Port = "8080"
+		log.Println("There is no environment variable for server port, server will use port 80 ")
+		server.Port = "80"
 	} else {
 		server.Port = port
 	}
@@ -41,9 +41,11 @@ func (s *Server) SetServerMux(cfgFile *config.ConfigFile) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server listening"))
 	})
+	mux.HandleFunc("GET /admin/config",s.GetConfigsHandler)
+	mux.HandleFunc("POST /admin/config",s.SaveConfigHandler)
+
 	for _, cfg := range cfgFile.Endpoints {
-		log.Println(cfg)
-		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateHandler()))
+		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateProxyHandler()))
 	}
 
 	s.Mux = mux
@@ -77,11 +79,11 @@ func (s *Server) StartServer() error {
 }
 
 func (s *Server) SaveConfig(configFile *config.ConfigFile) error {
-	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+	collection := s.Database.Mongo.Database(s.Database.MongoDb).Collection("configurations")
 
 	_, err := collection.InsertOne(context.TODO(), configFile)
 	if err != nil {
-		log.Println("Error saving config:",err)
+		log.Println("Error saving config:", err)
 	}
 
 	log.Println("Config saved successfully")
@@ -90,7 +92,7 @@ func (s *Server) SaveConfig(configFile *config.ConfigFile) error {
 
 // GetLatestConfig fetches the latest configuration from MongoDB
 func (s *Server) GetLatestConfig() (*config.ConfigFile, error) {
-	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+	collection := s.Database.Mongo.Database(s.Database.MongoDb).Collection("configurations")
 
 	// Find the latest document based on the created_at field
 	var latestConfig config.ConfigFile
@@ -107,14 +109,52 @@ func (s *Server) GetLatestConfig() (*config.ConfigFile, error) {
 	return &latestConfig, nil
 }
 
-func (s *Server) UpdateConfig(filter bson.M, update bson.M) error {
-	collection := s.Database.Mongo.Database(os.Getenv("mongo_db")).Collection("configurations")
+// GetAllConfigs fetches all configuration documents from MongoDB
+func (s *Server) GetAllConfigs() ([]config.ConfigFile, error) {
+	collection := s.Database.Mongo.Database(s.Database.MongoDb).Collection("configurations")
 
-	_, err := collection.UpdateOne(context.TODO(), filter, bson.M{"$set":update})
+	var configs []config.ConfigFile
+	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
-		log.Println("Error updating config:",err)
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		var config config.ConfigFile
+		if err := cursor.Decode(&config); err != nil {
+			return nil, err
+		}
+		configs = append(configs, config)
 	}
 
-	log.Println("Config updated successfully!")
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return configs, nil
+}
+
+// UpdateConfig updates a configuration document in MongoDB based on the provided filter
+func (s *Server) UpdateConfig(filter bson.D, update bson.D) error {
+	collection := s.Database.Mongo.Database(s.Database.MongoDb).Collection("configurations")
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// DeleteConfig deletes a configuration document from MongoDB based on the provided filter
+func (s *Server) DeleteConfig(filter bson.D) ( *mongo.DeleteResult, error) {
+	collection := s.Database.Mongo.Database(s.Database.MongoDb).Collection("configurations")
+
+	result, err := collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

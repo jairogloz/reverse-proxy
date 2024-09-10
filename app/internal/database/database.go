@@ -13,14 +13,26 @@ type Database struct {
 	URL   string
 	Port  string
 	Mongo *mongo.Client
+	MongoDb string
 }
 
 func NewDatabase() *Database {
 	url := os.Getenv("mongo_url")
+	if url == "" {
+		url = "mongodb://localhost:27017"
+	}
 	port := os.Getenv("mongo_port")
+	if port == "" {
+		port = "27017"
+	}
+	mdb := os.Getenv("mongo_db")
+	if mdb == "" {
+		mdb = "reverse-proxy"
+	}
 	db := &Database{}
 	db.Port = port
 	db.URL = url
+	db.MongoDb = mdb
 
 	// Mostrar URL y puerto para verificar
 	log.Println("Mongo URL:", db.URL)
@@ -60,7 +72,5 @@ func (d *Database) StartMongo() error {
 
 	log.Println("Connected to MongoDB!")
 	d.Mongo = client
-	return nil	
+	return nil
 }
-
-
