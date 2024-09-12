@@ -10,8 +10,8 @@ import (
 
 
 func (s *Server) GetConfigsHandler(w http.ResponseWriter, r *http.Request) {
-	param := r.URL.Query().Get("query")
-	if param == "latest" {
+	filter := r.URL.Query().Get("filter")
+	if filter == "latest" {
 		cfgFile, err := s.GetLatestConfig()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -7,6 +7,7 @@ import (
 )
 
 type Middleware func(next http.Handler) http.HandlerFunc
+type MiddlewareFunc func(next http.HandlerFunc) http.HandlerFunc
 
 // RequestLoggerMiddleware logs every incoming request to the console.
 // It logs the start time, HTTP method, and URL path when the request starts,
@@ -48,7 +49,50 @@ func MiddlewareChain(middlewares ...Middleware) Middleware {
 	}
 }
 
-var MiddlewaresList = map[string]Middleware{
-	"Logger": RequestLoggerMiddleware,
-	"Auth":   RequireAuthMiddleware,
+func MiddlewareFuncChain(middlewares ...MiddlewareFunc) MiddlewareFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		for i := len(middlewares) - 1; i >= 0; i-- {
+			next = middlewares[i](next)
+		}
+		return next.ServeHTTP
+	}
 }
+
+// CORSMiddleware añade las cabeceras necesarias para permitir CORS
+func CORSMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") 
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+		
+        next.ServeHTTP(w, r)
+    })
+}
+
+// CORSMiddleware añade las cabeceras necesarias para permitir CORS
+func CORSMiddlewareHandlerFunc(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") 
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+		
+		next.ServeHTTP(w, r)
+    })
+}
+
+
+var MiddlewaresList = map[string]Middleware{
+"Logger": RequestLoggerMiddleware,
+"Auth":   RequireAuthMiddleware,
+}
+

@@ -41,15 +41,15 @@ func (s *Server) SetServerMux(cfgFile *config.ConfigFile) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server listening"))
 	})
-	mux.HandleFunc("GET /admin/config",s.GetConfigsHandler)
-	mux.HandleFunc("POST /admin/config",s.SaveConfigHandler)
+	fs := http.FileServer(http.Dir("./web"))
+    mux.Handle("/admin/", http.StripPrefix("/admin", fs))
+	mux.HandleFunc("GET /admin/config", middleware.CORSMiddlewareHandlerFunc(s.GetConfigsHandler))
+	mux.HandleFunc("POST /admin/config", middleware.CORSMiddlewareHandlerFunc(s.SaveConfigHandler))
 
 	for _, cfg := range cfgFile.Endpoints {
 		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateProxyHandler()))
 	}
-
 	s.Mux = mux
-
 }
 
 func (s *Server) StartServer() error {

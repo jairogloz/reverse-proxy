@@ -44,7 +44,7 @@ func (c *Config) GenerateProxyHandler() http.HandlerFunc {
 		hi := r.Header.Get(c.HeaderIdentifier)
 		url, exist := c.BackendUrls[hi]
 		if exist {
-			handlers.ReverseProxy(url, c.Prefix, c.Secure).ServeHTTP(w, r)
+			handlers.CreateReverseProxyHandler(url, c.Prefix, c.Secure).ServeHTTP(w, r)
 		} else {
 			http.Error(w, "Not Found", http.StatusNotFound)
 		}
