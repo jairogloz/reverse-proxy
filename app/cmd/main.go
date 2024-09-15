@@ -17,6 +17,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+		if cfgFile == nil {
+			cfgFile = srv.SetDefaultConfig()
+		}
 		srv.SetServerMux(cfgFile)
 
 		// Iniciar el servidor en una goroutine

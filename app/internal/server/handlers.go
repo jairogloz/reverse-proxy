@@ -22,7 +22,7 @@ func (s *Server) GetConfigsHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type","application/json")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(out)
 		return
 	}
@@ -36,9 +36,8 @@ func (s *Server) GetConfigsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type","application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
-
 }
 
 func (s *Server) SaveConfigHandler(w http.ResponseWriter, r *http.Request) {

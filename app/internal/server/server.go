@@ -38,16 +38,25 @@ func NewServer(ctx context.Context) *Server {
 
 func (s *Server) SetServerMux(cfgFile *config.ConfigFile) {
 	mux := http.NewServeMux()
+
+	// Middleware Chain
+	chain := middleware.MiddlewareChain(
+		middleware.CORSMiddleware,
+		middleware.RequestLoggerMiddleware,
+	)
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server listening"))
 	})
-	fs := http.FileServer(http.Dir("./web"))
+	
+	fs := http.FileServer(http.Dir("./web/dist"))
     mux.Handle("/admin/", http.StripPrefix("/admin", fs))
-	mux.HandleFunc("GET /admin/config", middleware.CORSMiddlewareHandlerFunc(s.GetConfigsHandler))
-	mux.HandleFunc("POST /admin/config", middleware.CORSMiddlewareHandlerFunc(s.SaveConfigHandler))
+
+	mux.Handle("GET /admin/config", chain(http.HandlerFunc(s.GetConfigsHandler)))
+	mux.Handle("POST /admin/config", middleware.CORSMiddleware(http.HandlerFunc(s.SaveConfigHandler)))
 
 	for _, cfg := range cfgFile.Endpoints {
-		mux.HandleFunc(cfg.Prefix, middleware.RequestLoggerMiddleware(cfg.GenerateProxyHandler()))
+		mux.Handle(cfg.Prefix, chain(cfg.GenerateProxyHandler()))
 	}
 	s.Mux = mux
 }
@@ -157,4 +166,8 @@ func (s *Server) DeleteConfig(filter bson.D) ( *mongo.DeleteResult, error) {
 	}
 
 	return result, nil
+}
+
+func (s *Server) SetDefaultConfig() *config.ConfigFile {
+	return config.DefaultConfig()
 }
