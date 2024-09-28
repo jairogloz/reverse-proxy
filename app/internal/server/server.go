@@ -19,9 +19,10 @@ type Server struct {
 	Mux      *http.ServeMux
 	Context  context.Context
 	Database *database.Database
+	RestartChan chan bool
 }
 
-func NewServer(ctx context.Context) *Server {
+func NewServer(ctx context.Context, restart chan bool) *Server {
 	server := &Server{}
 	server.Context = ctx
 	port := os.Getenv("port")
@@ -32,6 +33,7 @@ func NewServer(ctx context.Context) *Server {
 		server.Port = port
 	}
 	server.Database = database.NewDatabase()
+	server.RestartChan = restart
 
 	return server
 }
@@ -47,6 +49,10 @@ func (s *Server) SetServerMux(cfgFile *config.ConfigFile) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Server listening"))
+	})
+	mux.HandleFunc("/restart",func(w http.ResponseWriter, r *http.Request) {
+		s.RestartChan <- true
+		w.Write([]byte("Restart signal sent"))
 	})
 	
 	fs := http.FileServer(http.Dir("./web/dist"))
