@@ -1,3 +1,10 @@
-run:
+
+
+build:
 	@npm --prefix ./web run build
-	@go run ./cmd/.
+	@docker compose build
+run:
+	@docker compose up -d
+
+stop:
+	@docker compose down

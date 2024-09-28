@@ -73,7 +73,7 @@ func NewConfig(filePath string) (*ConfigFile, error) {
 
 // DefaultConfig returns a default ConfigFile object
 func DefaultConfig() *ConfigFile {
-	cfgFile, err := NewConfig("./internal/config/config.json")
+	cfgFile, err := NewConfig("/app/config.json")
 	if err != nil {
 		log.Panic("Could not read the defaiult config file")
 	}

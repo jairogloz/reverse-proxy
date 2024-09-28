@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:6.0.8
+    container_name: mongodb
+    hostname: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    env_file: 
+      - .env
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_INIT_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PWD}
+    volumes:
+      - ./db-data/mongo/:/data/db
+    healthcheck:
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mongo-express:
+    image: mongo-express:latest
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PWD}
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: 'mongodb'
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PWD}
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongodb
+  
+  reverse-proxy:
+    container_name: reverse-proxy-server
+    env_file: local.env
+    ports: 
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        restart: true
+    build:
+      context: .
+      args:
+        - port=${port}
+        - mongo_user=${mongo_user}
+        - mongo_pwd=${mongo_pwd}
+        - mongo_url=${mongo_url}
+        - mongo_port=${mongo_port}
+        - mongo_db=${mongo_db}
+      dockerfile: Dockerfile
+
+  

@@ -55,7 +55,7 @@ func (s *Server) SetServerMux(cfgFile *config.ConfigFile) {
 		w.Write([]byte("Restart signal sent"))
 	})
 	
-	fs := http.FileServer(http.Dir("./web/dist"))
+	fs := http.FileServer(http.Dir("/app/web"))
     mux.Handle("/admin/", http.StripPrefix("/admin", fs))
 
 	mux.Handle("GET /admin/config", chain(http.HandlerFunc(s.GetConfigsHandler)))

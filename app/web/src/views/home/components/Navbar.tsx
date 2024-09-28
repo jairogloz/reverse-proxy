@@ -1,5 +1,3 @@
-import React from 'react'
-
 export const Navbar = () => {
   return (
     <nav className="navbar navbar-expand-lg" style={{backgroundColor: '#e3f2fd'}}>
