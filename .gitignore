@@ -22,4 +22,4 @@ go.work
 go.work.sum
 
 .idea
-/app/db-data
+*/db-data
