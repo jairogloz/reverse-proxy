@@ -78,3 +78,4 @@ This setup can be easily modified to implement load balancing or other routing l
 Enjoy exploring the Simple Reverse Proxy project!
 
 ### New section added to the readme.
+- Append 1
