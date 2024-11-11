@@ -76,3 +76,6 @@ The reverse proxy server re-routes incoming requests to the appropriate service 
 This setup can be easily modified to implement load balancing or other routing logic.
 
 Enjoy exploring the Simple Reverse Proxy project!
+
+### New section added to the readme.
+- Append 1
